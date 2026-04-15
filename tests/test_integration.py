@@ -354,3 +354,35 @@ def test_data_persisted_to_disk(server):
     assert store.LEARNERS_FILE.exists()
     data = store._load()
     assert MOCK_LEARNER_ID in data
+
+
+def test_submit_code_success_via_http(server):
+    result = asyncio.run(
+        _call(server, tool="submit_code", code='print("hello from tutorclaw")')
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert "hello from tutorclaw" in payload["stdout"]
+    assert payload["timed_out"] is False
+    assert payload["blocked_reason"] is None
+
+
+def test_submit_code_blocked_import_via_http(server):
+    result = asyncio.run(
+        _call(server, tool="submit_code", code="import os\nprint(os.getcwd())")
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["blocked_reason"] is not None
+    assert "os" in payload["blocked_reason"]
+    assert payload["stdout"] == ""
+
+
+def test_submit_code_runtime_error_via_http(server):
+    result = asyncio.run(
+        _call(server, tool="submit_code", code="print(1/0)")
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert "ZeroDivisionError" in payload["stderr"]
+    assert payload["blocked_reason"] is None
