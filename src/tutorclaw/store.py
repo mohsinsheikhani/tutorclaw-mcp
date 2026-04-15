@@ -71,6 +71,16 @@ def _default_exchanges(tier: str) -> int:
     return _EXCHANGES_BY_TIER.get(tier, _EXCHANGES_DEFAULT_PAID)
 
 
+def _default_state(tier: str) -> LearnerStateRecord:
+    return {
+        "chapter": 1,
+        "stage": "predict",
+        "confidence": 0.5,
+        "exchanges_remaining": _default_exchanges(tier),
+        "weak_areas": [],
+    }
+
+
 def create_learner(name: str, email: str | None) -> tuple[str, LearnerRecord]:
     data = _load()
 
@@ -87,18 +97,41 @@ def create_learner(name: str, email: str | None) -> tuple[str, LearnerRecord]:
     data[MOCK_LEARNER_ID] = record
     _save(data)
 
-    # Initialize default learner state
     state_data = _load_state()
-    state_data[MOCK_LEARNER_ID] = {
-        "chapter": 1,
-        "stage": "predict",
-        "confidence": 0.5,
-        "exchanges_remaining": _default_exchanges("free"),
-        "weak_areas": [],
-    }
+    state_data[MOCK_LEARNER_ID] = _default_state("free")
     _save_state(state_data)
 
     return MOCK_LEARNER_ID, record
+
+
+_VALID_STAGES = ("predict", "run", "investigate", "modify", "make")
+
+
+def update_state(
+    learner_id: str,
+    chapter: int,
+    stage: str,
+    confidence_delta: float,
+) -> LearnerStateRecord:
+    learners = _load()
+    if learner_id not in learners:
+        raise ValueError("learner not found")
+
+    if stage not in _VALID_STAGES:
+        raise ValueError(
+            f"stage must be one of: {', '.join(_VALID_STAGES)}"
+        )
+
+    state_data = _load_state()
+    if learner_id not in state_data:
+        state_data[learner_id] = _default_state(learners[learner_id]["tier"])
+
+    record = state_data[learner_id]
+    record["chapter"] = chapter
+    record["stage"] = stage
+    record["confidence"] = max(0.0, min(1.0, record["confidence"] + confidence_delta))
+    _save_state(state_data)
+    return record
 
 
 def get_state(learner_id: str) -> LearnerStateRecord:

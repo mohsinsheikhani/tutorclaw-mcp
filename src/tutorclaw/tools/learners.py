@@ -5,7 +5,7 @@ from typing import Annotated, TypedDict
 
 from pydantic import Field
 
-from tutorclaw.store import create_learner, get_learner_tier, get_state
+from tutorclaw.store import create_learner, get_learner_tier, get_state, update_state
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -84,6 +84,18 @@ def register_learner(
     }
 
 
+def _build_state_result(learner_id: str, state: dict, tier: str) -> LearnerStateResult:
+    return {
+        "learner_id": learner_id,
+        "chapter": state["chapter"],
+        "stage": state["stage"],
+        "confidence": state["confidence"],
+        "tier": tier,
+        "exchanges_remaining": state["exchanges_remaining"],
+        "weak_areas": state["weak_areas"],
+    }
+
+
 def get_learner_state(
     learner_id: Annotated[
         str,
@@ -97,14 +109,44 @@ def get_learner_state(
 
     This is a read-only operation and does not modify state.
     """
-    state = get_state(learner_id)
-    tier = get_learner_tier(learner_id)
-    return {
-        "learner_id": learner_id,
-        "chapter": state["chapter"],
-        "stage": state["stage"],
-        "confidence": state["confidence"],
-        "tier": tier,
-        "exchanges_remaining": state["exchanges_remaining"],
-        "weak_areas": state["weak_areas"],
-    }
+    return _build_state_result(learner_id, get_state(learner_id), get_learner_tier(learner_id))
+
+
+def update_progress(
+    learner_id: Annotated[
+        str,
+        Field(
+            description="The learner's unique ID.",
+            min_length=1,
+        ),
+    ],
+    chapter: Annotated[
+        int,
+        Field(
+            description="Chapter number to set.",
+            ge=1,
+        ),
+    ],
+    stage: Annotated[
+        str,
+        Field(
+            description="PRIMM-Lite stage: predict, run, investigate, modify, or make.",
+        ),
+    ],
+    confidence_delta: Annotated[
+        float,
+        Field(
+            description="Value added to current confidence score. Result is clamped to [0.0, 1.0].",
+            ge=-1.0,
+            le=1.0,
+        ),
+    ],
+) -> LearnerStateResult:
+    """Update a learner's tutoring progress.
+
+    Sets the chapter and stage, and adjusts the confidence score by
+    the given delta (clamped to [0.0, 1.0]). If the learner has no
+    existing state, a default state is created first.
+    """
+    state = update_state(learner_id, chapter, stage, confidence_delta)
+    return _build_state_result(learner_id, state, get_learner_tier(learner_id))

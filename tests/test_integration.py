@@ -107,6 +107,58 @@ def test_get_learner_state_not_found_via_http(server):
     assert "learner not found" in result.content[0].text
 
 
+def test_update_progress_via_http(server):
+    # Ensure learner exists
+    asyncio.run(_call(server, tool="register_learner", name="Ada"))
+    result = asyncio.run(
+        _call(
+            server,
+            tool="update_progress",
+            learner_id=MOCK_LEARNER_ID,
+            chapter=2,
+            stage="run",
+            confidence_delta=0.1,
+        )
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["chapter"] == 2
+    assert payload["stage"] == "run"
+    assert payload["confidence"] == pytest.approx(0.6)
+    assert payload["tier"] == "free"
+
+
+def test_update_progress_invalid_stage_via_http(server):
+    asyncio.run(_call(server, tool="register_learner", name="Ada"))
+    result = asyncio.run(
+        _call(
+            server,
+            tool="update_progress",
+            learner_id=MOCK_LEARNER_ID,
+            chapter=1,
+            stage="invalid",
+            confidence_delta=0.0,
+        )
+    )
+    assert result.isError
+    assert "stage must be one of" in result.content[0].text
+
+
+def test_update_progress_learner_not_found_via_http(server):
+    result = asyncio.run(
+        _call(
+            server,
+            tool="update_progress",
+            learner_id="nonexistent",
+            chapter=1,
+            stage="predict",
+            confidence_delta=0.0,
+        )
+    )
+    assert result.isError
+    assert "learner not found" in result.content[0].text
+
+
 def test_data_persisted_to_disk(server):
     """After HTTP calls, data file should exist on disk."""
     assert store.LEARNERS_FILE.exists()
