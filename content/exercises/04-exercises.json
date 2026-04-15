@@ -1,0 +1,23 @@
+[
+  {
+    "id": "ch04-ex01",
+    "question": "Write a function `square(n)` that returns `n * n`. Call it with 5 and print the result.",
+    "hint": "Define the function with `def`, then use `return`.",
+    "topic": "functions",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ch04-ex02",
+    "question": "Write a function `is_even(n)` that returns `True` if `n` is even and `False` otherwise. Test it with 4 and 7.",
+    "hint": "Use the modulo operator `%`. Even numbers have remainder 0 when divided by 2.",
+    "topic": "functions",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ch04-ex03",
+    "question": "Write a function `clamp(value, low, high)` that returns `value` constrained between `low` and `high`. Test: `clamp(15, 0, 10)` should return 10.",
+    "hint": "Use `max()` and `min()`, or nested conditionals.",
+    "topic": "functions",
+    "difficulty": "medium"
+  }
+]

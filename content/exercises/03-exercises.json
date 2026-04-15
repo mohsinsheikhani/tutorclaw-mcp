@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ch03-ex01",
+    "question": "Use a for loop to print the numbers 1 through 10.",
+    "hint": "Use `range(1, 11)`.",
+    "topic": "loops",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ch03-ex02",
+    "question": "Given a list `numbers = [4, 7, 2, 9, 1]`, use a loop to find and print the largest number without using `max()`.",
+    "hint": "Start with `largest = numbers[0]` and compare each element.",
+    "topic": "loops",
+    "difficulty": "medium"
+  }
+]

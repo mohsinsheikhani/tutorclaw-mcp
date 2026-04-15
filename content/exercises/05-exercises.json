@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ch05-ex01",
+    "question": "Write a program that writes the strings 'cat', 'dog', 'bird' to a file called `animals.txt`, one per line. Then read the file back and print each line.",
+    "hint": "Open the file in 'w' mode to write, then open in 'r' mode to read.",
+    "topic": "files",
+    "difficulty": "medium"
+  },
+  {
+    "id": "ch05-ex02",
+    "question": "Write a function `count_lines(filename)` that opens a file and returns how many lines it contains.",
+    "hint": "Iterate over the file object and count each line.",
+    "topic": "files",
+    "difficulty": "hard"
+  }
+]

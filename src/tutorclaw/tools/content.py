@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from typing import Annotated, TypedDict
 
@@ -8,6 +9,7 @@ from pydantic import Field
 from tutorclaw.store import PROJECT_ROOT, get_learner_tier
 
 CHAPTERS_DIR = PROJECT_ROOT / "content" / "chapters"
+EXERCISES_DIR = PROJECT_ROOT / "content" / "exercises"
 
 
 class ChapterContentResult(TypedDict):
@@ -62,6 +64,30 @@ def _extract_section(text: str, section: str, chapter: int) -> tuple[str, str]:
     return matched_heading_text, "".join(lines[matched_idx:end_idx]).strip()
 
 
+def _tier_gate(tier: str, chapter: int) -> None:
+    if tier == "free" and chapter > 5:
+        raise ValueError(
+            f"Chapter {chapter} requires a paid plan. "
+            "Upgrade at tutorclaw.io/upgrade to unlock all chapters."
+        )
+
+
+class ExerciseItem(TypedDict):
+    id: str
+    question: str
+    hint: str
+    topic: str
+    difficulty: str
+
+
+class ExercisesResult(TypedDict):
+    learner_id: str
+    chapter: int
+    total: int
+    filtered_by: list[str] | None
+    exercises: list[ExerciseItem]
+
+
 def get_chapter_content(
     learner_id: Annotated[
         str,
@@ -95,12 +121,7 @@ def get_chapter_content(
     If a section name is provided, only that section's content is returned.
     """
     tier = get_learner_tier(learner_id)
-
-    if tier == "free" and chapter > 5:
-        raise ValueError(
-            f"Chapter {chapter} requires a paid plan. "
-            "Upgrade at tutorclaw.io/upgrade to unlock all chapters."
-        )
+    _tier_gate(tier, chapter)
 
     chapter_file = _find_chapter_file(chapter)
     text = chapter_file.read_text()
@@ -122,4 +143,61 @@ def get_chapter_content(
         "title": title,
         "section": None,
         "content": text.strip(),
+    }
+
+
+def get_exercises(
+    learner_id: Annotated[
+        str,
+        Field(
+            description="The learner's unique ID.",
+            min_length=1,
+        ),
+    ],
+    chapter: Annotated[
+        int,
+        Field(
+            description="Chapter number whose exercises to retrieve.",
+            ge=1,
+        ),
+    ],
+    weak_areas: Annotated[
+        list[str] | None,
+        Field(
+            default=None,
+            description=(
+                "Optional list of topic strings to filter by (case-insensitive). "
+                "When omitted or empty, all exercises for the chapter are returned."
+            ),
+        ),
+    ] = None,
+) -> ExercisesResult:
+    """Return practice exercises for a specific chapter, optionally filtered by topic.
+
+    Call this when a learner needs to practise, not when they need to read content.
+    Free-tier learners can only access exercises for chapters 1–5.
+    """
+    tier = get_learner_tier(learner_id)
+    _tier_gate(tier, chapter)
+
+    exercises_file = EXERCISES_DIR / f"{chapter:02d}-exercises.json"
+    if not exercises_file.exists():
+        raise ValueError(f"exercises for chapter {chapter} not found")
+
+    all_exercises: list[ExerciseItem] = json.loads(exercises_file.read_text())
+
+    if weak_areas:
+        topics = {t.lower() for t in weak_areas}
+        exercises = [e for e in all_exercises if e["topic"].lower() in topics]
+        filtered_by: list[str] | None = list(weak_areas)
+    else:
+        exercises = all_exercises
+        filtered_by = None
+
+    return {
+        "learner_id": learner_id,
+        "chapter": chapter,
+        "total": len(exercises),
+        "filtered_by": filtered_by,
+        "exercises": exercises,
     }
