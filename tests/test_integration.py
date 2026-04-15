@@ -303,6 +303,52 @@ def test_generate_guidance_invalid_stage_via_http(server):
     assert "stage must be one of" in result.content[0].text
 
 
+def test_assess_response_strong_via_http(server):
+    result = asyncio.run(
+        _call(
+            server,
+            tool="assess_response",
+            answer_text="range generates a sequence used by the loop",
+            primm_stage="predict",
+            expected_concepts=["range", "sequence", "loop"],
+        )
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["confidence_delta"] == pytest.approx(0.2)
+    assert "Good answer" in payload["feedback"]
+    assert payload["recommendation"] == "Advance to the run stage."
+
+
+def test_assess_response_vague_via_http(server):
+    result = asyncio.run(
+        _call(
+            server,
+            tool="assess_response",
+            answer_text="idk",
+            primm_stage="run",
+            expected_concepts=["range", "sequence"],
+        )
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["confidence_delta"] == pytest.approx(-0.2)
+
+
+def test_assess_response_invalid_stage_via_http(server):
+    result = asyncio.run(
+        _call(
+            server,
+            tool="assess_response",
+            answer_text="some answer",
+            primm_stage="modify",
+            expected_concepts=["loop"],
+        )
+    )
+    assert result.isError
+    assert "stage must be one of" in result.content[0].text
+
+
 def test_data_persisted_to_disk(server):
     """After HTTP calls, data file should exist on disk."""
     assert store.LEARNERS_FILE.exists()

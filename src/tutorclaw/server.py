@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
+from tutorclaw.tools.assessment import assess_response
 from tutorclaw.tools.content import get_chapter_content, get_exercises
 from tutorclaw.tools.guidance import generate_guidance
 from tutorclaw.tools.learners import get_learner_state, register_learner, update_progress
@@ -69,6 +70,16 @@ mcp.tool(
         "openWorldHint": False,
     }
 )(generate_guidance)
+
+
+mcp.tool(
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)(assess_response)
 
 
 def main() -> None:
