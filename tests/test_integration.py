@@ -239,6 +239,70 @@ def test_get_exercises_tier_gate_via_http(server):
     assert "tutorclaw.io/upgrade" in result.content[0].text
 
 
+_SAMPLE_CHAPTER = """\
+# Chapter 1: Variables
+
+```python
+name = "Alice"
+print(name)
+```
+
+**Output:**
+```
+Alice
+```
+"""
+
+
+def test_generate_guidance_predict_via_http(server):
+    result = asyncio.run(
+        _call(
+            server,
+            tool="generate_guidance",
+            stage="predict",
+            confidence=0.5,
+            chapter_content=_SAMPLE_CHAPTER,
+        )
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["stage"] == "predict"
+    assert "```python" in payload["content"]
+    assert "**Output:**" not in payload["content"]
+    assert "PREDICT" in payload["system_prompt_addition"]
+
+
+def test_generate_guidance_run_via_http(server):
+    result = asyncio.run(
+        _call(
+            server,
+            tool="generate_guidance",
+            stage="run",
+            confidence=0.8,
+            chapter_content=_SAMPLE_CHAPTER,
+        )
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["stage"] == "run"
+    assert "**Output:**" in payload["content"]
+    assert "challenge" in payload["system_prompt_addition"].lower()
+
+
+def test_generate_guidance_invalid_stage_via_http(server):
+    result = asyncio.run(
+        _call(
+            server,
+            tool="generate_guidance",
+            stage="modify",
+            confidence=0.5,
+            chapter_content=_SAMPLE_CHAPTER,
+        )
+    )
+    assert result.isError
+    assert "stage must be one of" in result.content[0].text
+
+
 def test_data_persisted_to_disk(server):
     """After HTTP calls, data file should exist on disk."""
     assert store.LEARNERS_FILE.exists()
