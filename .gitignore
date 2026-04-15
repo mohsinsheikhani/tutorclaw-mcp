@@ -12,3 +12,6 @@ wheels/
 # Claude Code
 .claude/
 skills-lock.json
+
+# Learner data
+data/

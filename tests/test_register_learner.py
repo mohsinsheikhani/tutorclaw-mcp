@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from tutorclaw import store
+from tutorclaw.store import MOCK_API_KEY, MOCK_LEARNER_ID
 from tutorclaw.tools.learners import register_learner
 
 
@@ -15,10 +16,11 @@ def _reset_store():
 
 def test_register_with_name_only():
     result = register_learner(name="Ada")
-    assert result["learner_id"].startswith("lrn_")
-    assert len(result["learner_id"]) == len("lrn_") + 8
+    assert result["learner_id"] == MOCK_LEARNER_ID
     assert result["name"] == "Ada"
     assert result["email"] is None
+    assert result["tier"] == "free"
+    assert result["api_key"] == MOCK_API_KEY
     assert "Ada" in result["welcome_message"]
     assert result["learner_id"] in result["welcome_message"]
     assert result["created_at"].endswith("Z")
@@ -44,12 +46,32 @@ def test_invalid_email_rejected():
         register_learner(name="Ada", email="not-an-email")
 
 
-def test_unique_ids():
-    a = register_learner(name="A")["learner_id"]
-    b = register_learner(name="B")["learner_id"]
-    assert a != b
-
-
 def test_empty_email_string_treated_as_none():
     result = register_learner(name="Ada", email="   ")
     assert result["email"] is None
+
+
+def test_idempotent_registration():
+    """Calling register_learner twice returns the same record (mock ID is reused)."""
+    first = register_learner(name="Ada")
+    second = register_learner(name="Bob")
+    assert first["learner_id"] == second["learner_id"]
+    assert second["name"] == "Ada"  # original record preserved
+
+
+def test_persists_to_disk():
+    """Data survives a fresh _load after create."""
+    register_learner(name="Ada", email="ada@example.com")
+    data = store._load()
+    assert MOCK_LEARNER_ID in data
+    assert data[MOCK_LEARNER_ID]["name"] == "Ada"
+    assert data[MOCK_LEARNER_ID]["email"] == "ada@example.com"
+    assert data[MOCK_LEARNER_ID]["tier"] == "free"
+    assert data[MOCK_LEARNER_ID]["api_key"] == MOCK_API_KEY
+
+
+def test_reset_removes_file():
+    register_learner(name="Ada")
+    assert store.LEARNERS_FILE.exists()
+    store.reset()
+    assert not store.LEARNERS_FILE.exists()

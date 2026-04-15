@@ -5,15 +5,27 @@ from typing import Annotated, TypedDict
 
 from pydantic import Field
 
-from tutorclaw.store import create_learner
+from tutorclaw.store import create_learner, get_learner_tier, get_state
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+class LearnerStateResult(TypedDict):
+    learner_id: str
+    chapter: int
+    stage: str
+    confidence: float
+    tier: str
+    exchanges_remaining: int
+    weak_areas: list[str]
 
 
 class RegisterLearnerResult(TypedDict):
     learner_id: str
     name: str
     email: str | None
+    tier: str
+    api_key: str
     welcome_message: str
     created_at: str
 
@@ -62,9 +74,37 @@ def register_learner(
         "learner_id": learner_id,
         "name": record["name"],
         "email": record["email"],
+        "tier": record["tier"],
+        "api_key": record["api_key"],
         "welcome_message": (
             f"Welcome to TutorClaw, {record['name']}! "
             f"Your learner ID is {learner_id}."
         ),
         "created_at": record["created_at"],
+    }
+
+
+def get_learner_state(
+    learner_id: Annotated[
+        str,
+        Field(
+            description="The learner's unique ID.",
+            min_length=1,
+        ),
+    ],
+) -> LearnerStateResult:
+    """Read the current tutoring state for a learner.
+
+    This is a read-only operation and does not modify state.
+    """
+    state = get_state(learner_id)
+    tier = get_learner_tier(learner_id)
+    return {
+        "learner_id": learner_id,
+        "chapter": state["chapter"],
+        "stage": state["stage"],
+        "confidence": state["confidence"],
+        "tier": tier,
+        "exchanges_remaining": state["exchanges_remaining"],
+        "weak_areas": state["weak_areas"],
     }
