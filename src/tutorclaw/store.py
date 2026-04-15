@@ -9,7 +9,8 @@ from typing import TypedDict
 MOCK_LEARNER_ID = "learner-001"
 MOCK_API_KEY = "test-key-001"
 
-DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = PROJECT_ROOT / "data"
 LEARNERS_FILE = DATA_DIR / "learners.json"
 LEARNER_STATE_FILE = DATA_DIR / "learner_state.json"
 

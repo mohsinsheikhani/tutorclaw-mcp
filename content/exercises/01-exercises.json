@@ -1,0 +1,44 @@
+[
+  {
+    "id": "ch01-ex01",
+    "question": "Create a variable called `city` and assign your hometown to it. Print it.",
+    "hint": "Use the assignment operator `=` and then `print()`.",
+    "topic": "variables",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ch01-ex02",
+    "question": "Write code that stores your name, age, and height in separate variables, then prints each one on its own line.",
+    "hint": "Use three separate assignment statements.",
+    "topic": "variables",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ch01-ex03",
+    "question": "Start with `x = 5`. Without reassigning `x` directly, use `x = x + ...` to make `x` equal 20. Print the result.",
+    "hint": "You need to add 15 to x.",
+    "topic": "variables",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ch02-ex01",
+    "question": "Write a program that reads a number and prints 'positive', 'negative', or 'zero'.",
+    "hint": "Use if/elif/else and compare the number to 0.",
+    "topic": "conditionals",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ch02-ex02",
+    "question": "Given a variable `hour` (0–23), print 'morning' for 6–11, 'afternoon' for 12–17, 'evening' for 18–21, and 'night' otherwise.",
+    "hint": "Use chained elif conditions with >= and <=.",
+    "topic": "conditionals",
+    "difficulty": "medium"
+  },
+  {
+    "id": "ch02-ex03",
+    "question": "Write a login check: print 'Access granted' only if both `username == 'admin'` and `password == 'secret'`, otherwise print 'Access denied'.",
+    "hint": "Combine two conditions with `and`.",
+    "topic": "conditionals",
+    "difficulty": "medium"
+  }
+]

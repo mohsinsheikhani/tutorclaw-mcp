@@ -1,0 +1,51 @@
+[
+  {
+    "id": "ch03-ex01",
+    "question": "Use a for loop to print the numbers 1 through 10.",
+    "hint": "Use `range(1, 11)`.",
+    "topic": "loops",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ch03-ex02",
+    "question": "Given a list `numbers = [4, 7, 2, 9, 1]`, use a loop to find and print the largest number without using `max()`.",
+    "hint": "Start with `largest = numbers[0]` and compare each element.",
+    "topic": "loops",
+    "difficulty": "medium"
+  },
+  {
+    "id": "ch04-ex01",
+    "question": "Write a function `square(n)` that returns `n * n`. Call it with 5 and print the result.",
+    "hint": "Define the function with `def`, then use `return`.",
+    "topic": "functions",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ch04-ex02",
+    "question": "Write a function `is_even(n)` that returns `True` if `n` is even and `False` otherwise. Test it with 4 and 7.",
+    "hint": "Use the modulo operator `%`. Even numbers have remainder 0 when divided by 2.",
+    "topic": "functions",
+    "difficulty": "easy"
+  },
+  {
+    "id": "ch04-ex03",
+    "question": "Write a function `clamp(value, low, high)` that returns `value` constrained between `low` and `high`. Test: `clamp(15, 0, 10)` should return 10.",
+    "hint": "Use `max()` and `min()`, or nested conditionals.",
+    "topic": "functions",
+    "difficulty": "medium"
+  },
+  {
+    "id": "ch05-ex01",
+    "question": "Write a program that writes the strings 'cat', 'dog', 'bird' to a file called `animals.txt`, one per line. Then read the file back and print each line.",
+    "hint": "Open the file in 'w' mode to write, then open in 'r' mode to read.",
+    "topic": "files",
+    "difficulty": "medium"
+  },
+  {
+    "id": "ch05-ex02",
+    "question": "Write a function `count_lines(filename)` that opens a file and returns how many lines it contains.",
+    "hint": "Iterate over the file object and count each line.",
+    "topic": "files",
+    "difficulty": "hard"
+  }
+]

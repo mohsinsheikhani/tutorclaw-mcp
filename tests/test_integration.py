@@ -159,6 +159,46 @@ def test_update_progress_learner_not_found_via_http(server):
     assert "learner not found" in result.content[0].text
 
 
+def test_get_chapter_content_full_via_http(server):
+    asyncio.run(_call(server, tool="register_learner", name="Ada"))
+    result = asyncio.run(
+        _call(server, tool="get_chapter_content", learner_id=MOCK_LEARNER_ID, chapter=1)
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["chapter"] == 1
+    assert payload["title"] == "Chapter 1: Variables and Data Types"
+    assert payload["section"] is None
+    assert "variable" in payload["content"].lower()
+
+
+def test_get_chapter_content_section_via_http(server):
+    asyncio.run(_call(server, tool="register_learner", name="Ada"))
+    result = asyncio.run(
+        _call(
+            server,
+            tool="get_chapter_content",
+            learner_id=MOCK_LEARNER_ID,
+            chapter=1,
+            section="Code Examples",
+        )
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["section"] == "Code Examples"
+    assert "```python" in payload["content"]
+
+
+def test_get_chapter_content_tier_gate_via_http(server):
+    asyncio.run(_call(server, tool="register_learner", name="Ada"))
+    result = asyncio.run(
+        _call(server, tool="get_chapter_content", learner_id=MOCK_LEARNER_ID, chapter=6)
+    )
+    assert result.isError
+    assert "paid plan" in result.content[0].text
+    assert "tutorclaw.io/upgrade" in result.content[0].text
+
+
 def test_data_persisted_to_disk(server):
     """After HTTP calls, data file should exist on disk."""
     assert store.LEARNERS_FILE.exists()

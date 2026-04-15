@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
+from tutorclaw.tools.content import get_chapter_content
 from tutorclaw.tools.learners import get_learner_state, register_learner, update_progress
 
 mcp = FastMCP(
@@ -37,6 +38,16 @@ mcp.tool(
         "openWorldHint": False,
     }
 )(update_progress)
+
+
+mcp.tool(
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)(get_chapter_content)
 
 
 def main() -> None:
