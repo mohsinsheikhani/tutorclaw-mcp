@@ -83,13 +83,7 @@ def generate_guidance(
         ),
     ],
 ) -> GuidanceResult:
-    """Generate stage-appropriate content and agent behavioral instructions for the PRIMM-Lite teaching loop.
-
-    Returns the content to show the learner and a system_prompt_addition that tells the
-    agent how to behave this turn. The agent must follow system_prompt_addition exactly.
-    Confidence adjusts the tone: low confidence (< 0.4) gets supportive guidance,
-    high confidence (>= 0.7) gets an additional challenge.
-    """
+    """Prepare the chapter content excerpt and teaching instructions for the learner's current PRIMM-Lite stage."""
     if stage not in _VALID_STAGES:
         raise ValueError(f"stage must be one of: {', '.join(_VALID_STAGES)}")
 

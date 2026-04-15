@@ -116,12 +116,7 @@ def assess_response(
         ),
     ],
 ) -> AssessmentResult:
-    """Evaluate a learner's answer during a PRIMM-Lite teaching session.
-
-    Checks the answer against expected_concepts using keyword matching and
-    returns a confidence_delta, feedback, and a recommendation for the agent's
-    next action. The recommendation is a suggestion, not a command.
-    """
+    """Score a learner's answer against expected concepts and return a confidence adjustment, feedback, and next-step recommendation."""
     if primm_stage not in _VALID_STAGES:
         raise ValueError(f"stage must be one of: {', '.join(_VALID_STAGES)}")
     if not expected_concepts:

@@ -114,12 +114,7 @@ def get_chapter_content(
         ),
     ] = None,
 ) -> ChapterContentResult:
-    """Retrieve markdown content for a chapter, with optional section filtering.
-
-    Checks the learner's tier before returning content: free-tier learners can
-    only access chapters 1–5. Paid-tier learners have access to all chapters.
-    If a section name is provided, only that section's content is returned.
-    """
+    """Fetch the markdown content for a chapter, optionally narrowed to a specific section."""
     tier = get_learner_tier(learner_id)
     _tier_gate(tier, chapter)
 
@@ -172,11 +167,7 @@ def get_exercises(
         ),
     ] = None,
 ) -> ExercisesResult:
-    """Return practice exercises for a specific chapter, optionally filtered by topic.
-
-    Call this when a learner needs to practise, not when they need to read content.
-    Free-tier learners can only access exercises for chapters 1–5.
-    """
+    """Return practice exercises for a chapter, optionally filtered to specific topics."""
     tier = get_learner_tier(learner_id)
     _tier_gate(tier, chapter)
 

@@ -24,11 +24,7 @@ def get_upgrade_url(
         ),
     ],
 ) -> UpgradeUrlResult:
-    """Return a Stripe checkout URL for upgrading a free-tier learner to paid.
-
-    Raises an error if the learner is already on the paid tier.
-    This is a placeholder — real Stripe checkout integration replaces this in Lesson 14.
-    """
+    """Return a checkout URL to upgrade a free-tier learner to the paid plan."""
     tier = get_learner_tier(learner_id)  # raises ValueError if not found
     if tier != "free":
         raise ValueError("learner is already on the paid tier")

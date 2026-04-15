@@ -42,15 +42,7 @@ def submit_code(
         ),
     ],
 ) -> CodeExecutionResult:
-    """Run a learner's Python code in a mock sandbox and return stdout and stderr.
-
-    Performs basic safety checks before execution:
-    - Rejects imports of os, subprocess, and shutil.
-    - Rejects calls to open() for file access.
-
-    Execution is limited to 5 seconds. Returns stdout, stderr, timed_out flag,
-    and blocked_reason (non-null when the code was rejected before running).
-    """
+    """Execute a learner's Python code and return stdout, stderr, and execution status."""
     blocked = _safety_check(code)
     if blocked:
         return {

@@ -48,11 +48,7 @@ def register_learner(
         ),
     ] = None,
 ) -> RegisterLearnerResult:
-    """Register a new learner on the TutorClaw platform.
-
-    Returns a unique learner ID and a welcome message. The email is optional
-    but stored when provided.
-    """
+    """Register a new learner and return their ID, API key, and welcome message."""
     cleaned_name = name.strip()
     if not cleaned_name:
         raise ValueError("name must not be empty")
@@ -105,10 +101,7 @@ def get_learner_state(
         ),
     ],
 ) -> LearnerStateResult:
-    """Read the current tutoring state for a learner.
-
-    This is a read-only operation and does not modify state.
-    """
+    """Return the current tutoring progress for a learner, including chapter, stage, confidence, and tier."""
     return _build_state_result(learner_id, get_state(learner_id), get_learner_tier(learner_id))
 
 
@@ -142,11 +135,6 @@ def update_progress(
         ),
     ],
 ) -> LearnerStateResult:
-    """Update a learner's tutoring progress.
-
-    Sets the chapter and stage, and adjusts the confidence score by
-    the given delta (clamped to [0.0, 1.0]). If the learner has no
-    existing state, a default state is created first.
-    """
+    """Advance a learner to a new chapter and stage, and apply a confidence score adjustment."""
     state = update_state(learner_id, chapter, stage, confidence_delta)
     return _build_state_result(learner_id, state, get_learner_tier(learner_id))
