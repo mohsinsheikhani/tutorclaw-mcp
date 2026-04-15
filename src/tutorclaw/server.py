@@ -3,6 +3,7 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 
 from tutorclaw.tools.assessment import assess_response
+from tutorclaw.tools.billing import get_upgrade_url
 from tutorclaw.tools.content import get_chapter_content, get_exercises
 from tutorclaw.tools.execution import submit_code
 from tutorclaw.tools.guidance import generate_guidance
@@ -91,6 +92,16 @@ mcp.tool(
         "openWorldHint": False,
     }
 )(submit_code)
+
+
+mcp.tool(
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)(get_upgrade_url)
 
 
 def main() -> None:

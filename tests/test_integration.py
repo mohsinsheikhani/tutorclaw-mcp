@@ -356,6 +356,26 @@ def test_data_persisted_to_disk(server):
     assert MOCK_LEARNER_ID in data
 
 
+def test_get_upgrade_url_free_tier_via_http(server):
+    asyncio.run(_call(server, tool="register_learner", name="Ada"))
+    result = asyncio.run(
+        _call(server, tool="get_upgrade_url", learner_id=MOCK_LEARNER_ID)
+    )
+    assert not result.isError
+    payload = result.structuredContent
+    assert payload["learner_id"] == MOCK_LEARNER_ID
+    assert payload["tier"] == "free"
+    assert payload["upgrade_url"].startswith("https://checkout.stripe.com/")
+
+
+def test_get_upgrade_url_not_found_via_http(server):
+    result = asyncio.run(
+        _call(server, tool="get_upgrade_url", learner_id="nonexistent")
+    )
+    assert result.isError
+    assert "learner not found" in result.content[0].text
+
+
 def test_submit_code_success_via_http(server):
     result = asyncio.run(
         _call(server, tool="submit_code", code='print("hello from tutorclaw")')
