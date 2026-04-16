@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import TypedDict
 
@@ -33,7 +33,18 @@ class LearnerStateRecord(TypedDict):
     stage: str
     confidence: float
     exchanges_remaining: int
+    exchanges_reset_date: str  # ISO date, e.g. "2026-04-16"
     weak_areas: list[str]
+
+
+class TierInfo(TypedDict):
+    tier: str
+    exchanges_remaining: int
+    exchanges_reset_date: str
+
+
+class TierError(TypedDict):
+    error: str
 
 
 def _load() -> dict[str, LearnerRecord]:
@@ -78,6 +89,7 @@ def _default_state(tier: str) -> LearnerStateRecord:
         "stage": "predict",
         "confidence": 0.5,
         "exchanges_remaining": _default_exchanges(tier),
+        "exchanges_reset_date": date.today().isoformat(),
         "weak_areas": [],
     }
 
@@ -152,6 +164,37 @@ def get_learner_tier(learner_id: str) -> str:
     if learner_id not in learners:
         raise ValueError("learner not found")
     return learners[learner_id]["tier"]
+
+
+def check_tier(learner_id: str) -> TierInfo | TierError:
+    learners = _load()
+    if learner_id not in learners:
+        return {"error": "learner not found"}
+
+    state_data = _load_state()
+    if learner_id not in state_data:
+        return {"error": "learner state not found"}
+
+    tier = learners[learner_id]["tier"]
+    record = state_data[learner_id]
+    today = date.today().isoformat()
+
+    # Migrate records that pre-date this field.
+    if "exchanges_reset_date" not in record:
+        record["exchanges_reset_date"] = today
+        _save_state(state_data)
+
+    # Reset daily counter for free-tier learners whose window has passed.
+    if tier == "free" and today > record["exchanges_reset_date"]:
+        record["exchanges_remaining"] = _EXCHANGES_BY_TIER["free"]
+        record["exchanges_reset_date"] = today
+        _save_state(state_data)
+
+    return {
+        "tier": tier,
+        "exchanges_remaining": record["exchanges_remaining"],
+        "exchanges_reset_date": record["exchanges_reset_date"],
+    }
 
 
 def reset() -> None:
