@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from tutorclaw import store
-from tutorclaw.store import MOCK_LEARNER_ID
+from tutorclaw.store import LEARNER_STATE_FILE, MOCK_LEARNER_ID
 from tutorclaw.tools.content import get_chapter_content
 from tutorclaw.tools.learners import register_learner
 
@@ -91,7 +93,7 @@ def test_free_tier_chapter_beyond_limit_raises():
 
 def test_tier_gate_error_message_includes_upgrade_url():
     register_learner(name="Ada")
-    with pytest.raises(ValueError, match="tutorclaw.io/upgrade"):
+    with pytest.raises(ValueError, match="get_upgrade_url"):
         get_chapter_content(learner_id=MOCK_LEARNER_ID, chapter=10)
 
 
@@ -101,3 +103,45 @@ def test_all_five_chapters_accessible_for_free_tier():
         result = get_chapter_content(learner_id=MOCK_LEARNER_ID, chapter=ch)
         assert result["chapter"] == ch
         assert result["content"]
+
+
+def test_exchange_counter_decremented_on_success():
+    register_learner(name="Ada")
+    before = json.loads(LEARNER_STATE_FILE.read_text())[MOCK_LEARNER_ID]["exchanges_remaining"]
+    get_chapter_content(learner_id=MOCK_LEARNER_ID, chapter=1)
+    after = json.loads(LEARNER_STATE_FILE.read_text())[MOCK_LEARNER_ID]["exchanges_remaining"]
+    assert after == before - 1
+
+
+def test_zero_exchanges_raises_before_content():
+    register_learner(name="Ada")
+    state = json.loads(LEARNER_STATE_FILE.read_text())
+    state[MOCK_LEARNER_ID]["exchanges_remaining"] = 0
+    LEARNER_STATE_FILE.write_text(json.dumps(state))
+    with pytest.raises(ValueError, match="used all 50 free exchanges"):
+        get_chapter_content(learner_id=MOCK_LEARNER_ID, chapter=1)
+
+
+def test_paid_tier_chapter_above_5_allowed(tmp_path, monkeypatch):
+    register_learner(name="Ada")
+    learners_data = json.loads(store.LEARNERS_FILE.read_text())
+    learners_data[MOCK_LEARNER_ID]["tier"] = "paid"
+    store.LEARNERS_FILE.write_text(json.dumps(learners_data))
+    # Chapter 6 is only blocked for free tier; paid should reach file-not-found.
+    with pytest.raises(ValueError, match="chapter 6 not found"):
+        get_chapter_content(learner_id=MOCK_LEARNER_ID, chapter=6)
+
+
+def test_paid_tier_no_exchange_decrement():
+    register_learner(name="Ada")
+    learners_data = json.loads(store.LEARNERS_FILE.read_text())
+    learners_data[MOCK_LEARNER_ID]["tier"] = "paid"
+    store.LEARNERS_FILE.write_text(json.dumps(learners_data))
+    state = json.loads(LEARNER_STATE_FILE.read_text())
+    state[MOCK_LEARNER_ID]["exchanges_remaining"] = -1
+    LEARNER_STATE_FILE.write_text(json.dumps(state))
+    # Should not raise and should not touch the counter.
+    with pytest.raises(ValueError, match="chapter 6 not found"):
+        get_chapter_content(learner_id=MOCK_LEARNER_ID, chapter=6)
+    after = json.loads(LEARNER_STATE_FILE.read_text())[MOCK_LEARNER_ID]["exchanges_remaining"]
+    assert after == -1

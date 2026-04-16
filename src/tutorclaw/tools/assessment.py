@@ -4,6 +4,13 @@ from typing import Annotated, TypedDict
 
 from pydantic import Field
 
+from tutorclaw.store import check_tier, decrement_exchanges
+
+_MSG_EXCHANGES_EXHAUSTED = (
+    "You have used all 50 free exchanges for today. "
+    "Call get_upgrade_url to upgrade, or try again tomorrow."
+)
+
 _VALID_STAGES = ("predict", "run", "investigate")
 
 _VAGUE_PHRASES = frozenset(
@@ -92,6 +99,13 @@ def _build_feedback(
 
 
 def assess_response(
+    learner_id: Annotated[
+        str,
+        Field(
+            description="The learner's unique ID.",
+            min_length=1,
+        ),
+    ],
     answer_text: Annotated[
         str,
         Field(
@@ -117,6 +131,14 @@ def assess_response(
     ],
 ) -> AssessmentResult:
     """Score a learner's answer against expected concepts and return a confidence adjustment, feedback, and next-step recommendation."""
+    tier_info = check_tier(learner_id)
+    if "error" in tier_info:
+        raise ValueError(tier_info["error"])
+    if tier_info["tier"] == "free":
+        if tier_info["exchanges_remaining"] == 0:
+            raise ValueError(_MSG_EXCHANGES_EXHAUSTED)
+        decrement_exchanges(learner_id)
+
     if primm_stage not in _VALID_STAGES:
         raise ValueError(f"stage must be one of: {', '.join(_VALID_STAGES)}")
     if not expected_concepts:

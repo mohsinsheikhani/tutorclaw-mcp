@@ -6,8 +6,19 @@ from typing import Annotated, TypedDict
 
 from pydantic import Field
 
+from tutorclaw.store import check_tier, spend_code_submission
+
 _BLOCKED_IMPORTS = ("os", "subprocess", "shutil")
 _BLOCKED_BUILTINS = ("open(",)
+
+_MSG_SUBMISSIONS_EXHAUSTED = (
+    "You have used all 10 free code submissions for today. "
+    "Call get_upgrade_url to upgrade, or try again tomorrow."
+)
+_MSG_EXCHANGES_EXHAUSTED = (
+    "You have used all 50 free exchanges for today. "
+    "Call get_upgrade_url to upgrade, or try again tomorrow."
+)
 
 
 class CodeExecutionResult(TypedDict):
@@ -30,6 +41,13 @@ def _safety_check(code: str) -> str | None:
 
 
 def submit_code(
+    learner_id: Annotated[
+        str,
+        Field(
+            description="The learner's unique ID.",
+            min_length=1,
+        ),
+    ],
     code: Annotated[
         str,
         Field(
@@ -43,6 +61,17 @@ def submit_code(
     ],
 ) -> CodeExecutionResult:
     """Execute a learner's Python code and return stdout, stderr, and execution status."""
+    tier_info = check_tier(learner_id)
+    if "error" in tier_info:
+        raise ValueError(tier_info["error"])
+
+    if tier_info["tier"] == "free":
+        if tier_info["code_submissions_today"] >= 10:
+            raise ValueError(_MSG_SUBMISSIONS_EXHAUSTED)
+        if tier_info["exchanges_remaining"] == 0:
+            raise ValueError(_MSG_EXCHANGES_EXHAUSTED)
+        spend_code_submission(learner_id)
+
     blocked = _safety_check(code)
     if blocked:
         return {

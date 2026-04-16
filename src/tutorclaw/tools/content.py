@@ -6,7 +6,7 @@ from typing import Annotated, TypedDict
 
 from pydantic import Field
 
-from tutorclaw.store import PROJECT_ROOT, get_learner_tier
+from tutorclaw.store import PROJECT_ROOT, check_tier, decrement_exchanges
 
 CHAPTERS_DIR = PROJECT_ROOT / "content" / "chapters"
 EXERCISES_DIR = PROJECT_ROOT / "content" / "exercises"
@@ -64,12 +64,24 @@ def _extract_section(text: str, section: str, chapter: int) -> tuple[str, str]:
     return matched_heading_text, "".join(lines[matched_idx:end_idx]).strip()
 
 
-def _tier_gate(tier: str, chapter: int) -> None:
-    if tier == "free" and chapter > 5:
-        raise ValueError(
-            f"Chapter {chapter} requires a paid plan. "
-            "Upgrade at tutorclaw.io/upgrade to unlock all chapters."
-        )
+_MSG_PAID_PLAN = (
+    "This content requires a paid plan. "
+    "Call get_upgrade_url for your personal upgrade link."
+)
+_MSG_EXCHANGES_EXHAUSTED = (
+    "You have used all 50 free exchanges for today. "
+    "Call get_upgrade_url to upgrade, or try again tomorrow."
+)
+
+
+def _apply_free_tier_gates(tier_info: dict, chapter: int) -> None:
+    """Raise ValueError if any free-tier gate blocks the request."""
+    if tier_info["tier"] != "free":
+        return
+    if chapter > 5:
+        raise ValueError(_MSG_PAID_PLAN)
+    if tier_info["exchanges_remaining"] == 0:
+        raise ValueError(_MSG_EXCHANGES_EXHAUSTED)
 
 
 class ExerciseItem(TypedDict):
@@ -115,8 +127,12 @@ def get_chapter_content(
     ] = None,
 ) -> ChapterContentResult:
     """Fetch the markdown content for a chapter, optionally narrowed to a specific section."""
-    tier = get_learner_tier(learner_id)
-    _tier_gate(tier, chapter)
+    tier_info = check_tier(learner_id)
+    if "error" in tier_info:
+        raise ValueError(tier_info["error"])
+    _apply_free_tier_gates(tier_info, chapter)
+    if tier_info["tier"] == "free":
+        decrement_exchanges(learner_id)
 
     chapter_file = _find_chapter_file(chapter)
     text = chapter_file.read_text()
@@ -168,8 +184,12 @@ def get_exercises(
     ] = None,
 ) -> ExercisesResult:
     """Return practice exercises for a chapter, optionally filtered to specific topics."""
-    tier = get_learner_tier(learner_id)
-    _tier_gate(tier, chapter)
+    tier_info = check_tier(learner_id)
+    if "error" in tier_info:
+        raise ValueError(tier_info["error"])
+    _apply_free_tier_gates(tier_info, chapter)
+    if tier_info["tier"] == "free":
+        decrement_exchanges(learner_id)
 
     exercises_file = EXERCISES_DIR / f"{chapter:02d}-exercises.json"
     if not exercises_file.exists():

@@ -34,6 +34,7 @@ class LearnerStateRecord(TypedDict):
     confidence: float
     exchanges_remaining: int
     exchanges_reset_date: str  # ISO date, e.g. "2026-04-16"
+    code_submissions_today: int
     weak_areas: list[str]
 
 
@@ -41,6 +42,7 @@ class TierInfo(TypedDict):
     tier: str
     exchanges_remaining: int
     exchanges_reset_date: str
+    code_submissions_today: int
 
 
 class TierError(TypedDict):
@@ -90,6 +92,7 @@ def _default_state(tier: str) -> LearnerStateRecord:
         "confidence": 0.5,
         "exchanges_remaining": _default_exchanges(tier),
         "exchanges_reset_date": date.today().isoformat(),
+        "code_submissions_today": 0,
         "weak_areas": [],
     }
 
@@ -184,17 +187,40 @@ def check_tier(learner_id: str) -> TierInfo | TierError:
         record["exchanges_reset_date"] = today
         _save_state(state_data)
 
-    # Reset daily counter for free-tier learners whose window has passed.
+    # Reset daily counters for free-tier learners whose window has passed.
     if tier == "free" and today > record["exchanges_reset_date"]:
         record["exchanges_remaining"] = _EXCHANGES_BY_TIER["free"]
         record["exchanges_reset_date"] = today
+        record["code_submissions_today"] = 0
         _save_state(state_data)
 
     return {
         "tier": tier,
         "exchanges_remaining": record["exchanges_remaining"],
         "exchanges_reset_date": record["exchanges_reset_date"],
+        "code_submissions_today": record.get("code_submissions_today", 0),
     }
+
+
+def decrement_exchanges(learner_id: str) -> None:
+    """Subtract 1 from exchanges_remaining. Caller is responsible for checking tier and quota."""
+    state_data = _load_state()
+    record = state_data.get(learner_id)
+    if record is not None and record.get("exchanges_remaining", 0) > 0:
+        record["exchanges_remaining"] -= 1
+        _save_state(state_data)
+
+
+def spend_code_submission(learner_id: str) -> None:
+    """Increment code_submissions_today by 1 and decrement exchanges_remaining by 1."""
+    state_data = _load_state()
+    record = state_data.get(learner_id)
+    if record is None:
+        return
+    record["code_submissions_today"] = record.get("code_submissions_today", 0) + 1
+    if record.get("exchanges_remaining", 0) > 0:
+        record["exchanges_remaining"] -= 1
+    _save_state(state_data)
 
 
 def reset() -> None:

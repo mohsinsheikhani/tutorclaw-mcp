@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from tutorclaw import store
-from tutorclaw.store import MOCK_LEARNER_ID
+from tutorclaw.store import LEARNER_STATE_FILE, MOCK_LEARNER_ID
 from tutorclaw.tools.content import get_exercises
 from tutorclaw.tools.learners import register_learner
 
@@ -113,7 +115,7 @@ def test_free_tier_chapter_beyond_limit_raises():
 
 def test_tier_gate_upgrade_url_present():
     register_learner(name="Ada")
-    with pytest.raises(ValueError, match="tutorclaw.io/upgrade"):
+    with pytest.raises(ValueError, match="get_upgrade_url"):
         get_exercises(learner_id=MOCK_LEARNER_ID, chapter=6)
 
 
@@ -123,3 +125,20 @@ def test_all_five_chapters_accessible():
         result = get_exercises(learner_id=MOCK_LEARNER_ID, chapter=ch)
         assert result["chapter"] == ch
         assert result["total"] > 0
+
+
+def test_exchange_counter_decremented_on_success():
+    register_learner(name="Ada")
+    before = json.loads(LEARNER_STATE_FILE.read_text())[MOCK_LEARNER_ID]["exchanges_remaining"]
+    get_exercises(learner_id=MOCK_LEARNER_ID, chapter=1)
+    after = json.loads(LEARNER_STATE_FILE.read_text())[MOCK_LEARNER_ID]["exchanges_remaining"]
+    assert after == before - 1
+
+
+def test_zero_exchanges_raises():
+    register_learner(name="Ada")
+    state = json.loads(LEARNER_STATE_FILE.read_text())
+    state[MOCK_LEARNER_ID]["exchanges_remaining"] = 0
+    LEARNER_STATE_FILE.write_text(json.dumps(state))
+    with pytest.raises(ValueError, match="used all 50 free exchanges"):
+        get_exercises(learner_id=MOCK_LEARNER_ID, chapter=1)
