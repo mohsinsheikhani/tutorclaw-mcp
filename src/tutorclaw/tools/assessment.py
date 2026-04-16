@@ -130,7 +130,12 @@ def assess_response(
         ),
     ],
 ) -> AssessmentResult:
-    """Score a learner's answer against expected concepts and return a confidence adjustment, feedback, and next-step recommendation."""
+    """Score a learner's answer against expected concepts and return a confidence adjustment, feedback, and next-step recommendation.
+
+    WHEN to call: When a learner submits a natural-language answer to a predict, run, or investigate prompt and you need to evaluate their understanding.
+    NEVER call for general conversation — only use when the learner is answering a PRIMM-Lite stage question. Use submit_code for code submissions.
+    Related: submit_code (execute code, not text answers), update_progress (apply the returned confidence_delta and recommendation).
+    """
     tier_info = check_tier(learner_id)
     if "error" in tier_info:
         raise ValueError(tier_info["error"])

@@ -48,7 +48,12 @@ def register_learner(
         ),
     ] = None,
 ) -> RegisterLearnerResult:
-    """Register a new learner and return their ID, API key, and welcome message."""
+    """Register a new learner and return their ID, API key, and welcome message.
+
+    WHEN to call: At the very start of a conversation when a user wants to begin learning and has no learner_id yet.
+    NEVER call for existing learners — use get_learner_state to look up a known learner_id instead.
+    Related: get_learner_state (read existing learner), update_progress (change progress).
+    """
     cleaned_name = name.strip()
     if not cleaned_name:
         raise ValueError("name must not be empty")
@@ -101,7 +106,12 @@ def get_learner_state(
         ),
     ],
 ) -> LearnerStateResult:
-    """Return the current tutoring progress for a learner, including chapter, stage, confidence, and tier."""
+    """Return the current tutoring progress for a learner, including chapter, stage, confidence, and tier.
+
+    WHEN to call: Before any tutoring action to check the learner's current chapter, stage, confidence, tier, and remaining exchanges.
+    NEVER call to change progress — this is read-only. Use update_progress to advance chapter or stage.
+    Related: update_progress (write progress), register_learner (create new learner).
+    """
     return _build_state_result(learner_id, get_state(learner_id), get_learner_tier(learner_id))
 
 
@@ -135,6 +145,11 @@ def update_progress(
         ),
     ],
 ) -> LearnerStateResult:
-    """Advance a learner to a new chapter and stage, and apply a confidence score adjustment."""
+    """Advance a learner to a new chapter and stage, and apply a confidence score adjustment.
+
+    WHEN to call: After assess_response returns a recommendation to advance, or when the tutor decides to move the learner forward or back.
+    NEVER call to check current state — this is write-only. Use get_learner_state to read progress first.
+    Related: get_learner_state (read current progress), assess_response (get recommendation before updating).
+    """
     state = update_state(learner_id, chapter, stage, confidence_delta)
     return _build_state_result(learner_id, state, get_learner_tier(learner_id))

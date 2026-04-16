@@ -60,7 +60,12 @@ def submit_code(
         ),
     ],
 ) -> CodeExecutionResult:
-    """Execute a learner's Python code and return stdout, stderr, and execution status."""
+    """Execute a learner's Python code in a sandbox and return stdout, stderr, and execution status.
+
+    WHEN to call: When a learner submits Python code to run, typically during the modify or make PRIMM-Lite stages.
+    NEVER call for non-code messages — use assess_response to evaluate natural-language answers instead.
+    Related: assess_response (evaluate text answers), get_exercises (get problems that may require code submissions).
+    """
     tier_info = check_tier(learner_id)
     if "error" in tier_info:
         raise ValueError(tier_info["error"])

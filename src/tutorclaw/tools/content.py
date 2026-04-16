@@ -126,7 +126,12 @@ def get_chapter_content(
         ),
     ] = None,
 ) -> ChapterContentResult:
-    """Fetch the markdown content for a chapter, optionally narrowed to a specific section."""
+    """Fetch the markdown content for a chapter, optionally narrowed to a specific section.
+
+    WHEN to call: When the learner needs to read or study chapter material, or when generate_guidance needs chapter_content as input.
+    NEVER call for exercises or practice — use get_exercises to retrieve practice problems instead.
+    Related: get_exercises (practice problems), generate_guidance (needs this tool's output as input).
+    """
     tier_info = check_tier(learner_id)
     if "error" in tier_info:
         raise ValueError(tier_info["error"])
@@ -183,7 +188,12 @@ def get_exercises(
         ),
     ] = None,
 ) -> ExercisesResult:
-    """Return practice exercises for a chapter, optionally filtered to specific topics."""
+    """Return practice exercises for a chapter, optionally filtered to specific topics.
+
+    WHEN to call: When the learner is ready to practice, especially in the modify or make PRIMM-Lite stages, or when targeting weak_areas.
+    NEVER call for reading material — use get_chapter_content to retrieve chapter text instead.
+    Related: get_chapter_content (reading material), assess_response (evaluate exercise answers).
+    """
     tier_info = check_tier(learner_id)
     if "error" in tier_info:
         raise ValueError(tier_info["error"])

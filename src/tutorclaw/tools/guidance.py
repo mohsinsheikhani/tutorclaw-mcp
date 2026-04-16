@@ -97,7 +97,12 @@ def generate_guidance(
         ),
     ],
 ) -> GuidanceResult:
-    """Prepare the chapter content excerpt and teaching instructions for the learner's current PRIMM-Lite stage."""
+    """Prepare the chapter content excerpt and teaching instructions for the learner's current PRIMM-Lite stage.
+
+    WHEN to call: After fetching chapter content with get_chapter_content, to get stage-appropriate code excerpts and a system prompt for the predict, run, or investigate stage.
+    NEVER call for raw content — use get_chapter_content to fetch chapter text first, then pass it here.
+    Related: get_chapter_content (fetch chapter_content input), assess_response (evaluate the learner's answer after guidance is delivered).
+    """
     tier_info = check_tier(learner_id)
     if "error" in tier_info:
         raise ValueError(tier_info["error"])
