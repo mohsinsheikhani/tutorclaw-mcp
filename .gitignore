@@ -15,3 +15,4 @@ skills-lock.json
 
 # Learner data
 data/
+.env

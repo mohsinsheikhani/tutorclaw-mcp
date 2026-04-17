@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import subprocess
 import sys
 import time
@@ -21,10 +22,12 @@ def server():
     # Clean slate before the server starts
     store.reset()
 
+    env = {**os.environ, "STRIPE_WEBHOOK_SECRET": "whsec_test_fake"}
     proc = subprocess.Popen(
         [sys.executable, "-m", "tutorclaw"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        env=env,
     )
     deadline = time.time() + 10
     ready = False
@@ -356,6 +359,10 @@ def test_data_persisted_to_disk(server):
     assert MOCK_LEARNER_ID in data
 
 
+@pytest.mark.skipif(
+    not os.environ.get("STRIPE_SECRET_KEY") or not os.environ.get("STRIPE_PRICE_ID_PAID"),
+    reason="requires real Stripe test credentials in STRIPE_SECRET_KEY and STRIPE_PRICE_ID_PAID",
+)
 def test_get_upgrade_url_free_tier_via_http(server):
     asyncio.run(_call(server, tool="register_learner", name="Ada"))
     result = asyncio.run(
@@ -406,3 +413,24 @@ def test_submit_code_runtime_error_via_http(server):
     payload = result.structuredContent
     assert "ZeroDivisionError" in payload["stderr"]
     assert payload["blocked_reason"] is None
+
+
+def test_webhook_invalid_signature_returns_400(server):
+    resp = httpx.post(
+        "http://127.0.0.1:8000/webhook",
+        content=b'{"type":"checkout.session.completed"}',
+        headers={"Stripe-Signature": "t=1,v1=deadbeef"},
+        timeout=5.0,
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error"] == "invalid signature"
+
+
+def test_webhook_missing_signature_returns_400(server):
+    resp = httpx.post(
+        "http://127.0.0.1:8000/webhook",
+        content=b"{}",
+        timeout=5.0,
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error"] == "missing signature header"

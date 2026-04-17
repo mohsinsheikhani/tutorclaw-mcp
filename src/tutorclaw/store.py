@@ -162,6 +162,30 @@ def get_state(learner_id: str) -> LearnerStateRecord:
     return state_data[learner_id]
 
 
+def upgrade_learner_to_paid(learner_id: str) -> bool:
+    """Flip learner tier to 'paid' and reset exchanges to unlimited.
+
+    Returns True if the tier was changed, False if the learner was already paid.
+    Raises ValueError if the learner is unknown.
+    """
+    learners = _load()
+    if learner_id not in learners:
+        raise ValueError("learner not found")
+
+    if learners[learner_id]["tier"] == "paid":
+        return False
+
+    learners[learner_id]["tier"] = "paid"
+    _save(learners)
+
+    state_data = _load_state()
+    if learner_id in state_data:
+        state_data[learner_id]["exchanges_remaining"] = _EXCHANGES_DEFAULT_PAID
+        _save_state(state_data)
+
+    return True
+
+
 def get_learner_tier(learner_id: str) -> str:
     learners = _load()
     if learner_id not in learners:

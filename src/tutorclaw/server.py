@@ -8,6 +8,7 @@ from tutorclaw.tools.content import get_chapter_content, get_exercises
 from tutorclaw.tools.execution import submit_code
 from tutorclaw.tools.guidance import generate_guidance
 from tutorclaw.tools.learners import get_learner_state, register_learner, update_progress
+from tutorclaw.webhook import stripe_webhook
 
 mcp = FastMCP(
     "tutorclaw",
@@ -102,6 +103,9 @@ mcp.tool(
         "openWorldHint": False,
     }
 )(get_upgrade_url)
+
+
+mcp.custom_route("/webhook", methods=["POST"])(stripe_webhook)
 
 
 def main() -> None:

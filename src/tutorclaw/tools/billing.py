@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import os
 from typing import Annotated, TypedDict
 
+import stripe
 from pydantic import Field
 
 from tutorclaw.store import get_learner_tier
-
-_MOCK_CHECKOUT_URL = "https://checkout.stripe.com/mock-session-id"
 
 
 class UpgradeUrlResult(TypedDict):
@@ -33,8 +33,24 @@ def get_upgrade_url(
     tier = get_learner_tier(learner_id)  # raises ValueError if not found
     if tier != "free":
         raise ValueError("learner is already on the paid tier")
+
+    secret_key = os.environ.get("STRIPE_SECRET_KEY")
+    if not secret_key:
+        raise RuntimeError("STRIPE_SECRET_KEY is not set")
+    price_id = os.environ.get("STRIPE_PRICE_ID_PAID")
+    if not price_id:
+        raise RuntimeError("STRIPE_PRICE_ID_PAID is not set")
+
+    stripe.api_key = secret_key
+    session = stripe.checkout.Session.create(
+        mode="subscription",
+        line_items=[{"price": price_id, "quantity": 1}],
+        success_url="https://tutorclaw.io/upgrade/success?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url="https://tutorclaw.io/upgrade/cancel",
+        metadata={"learner_id": learner_id},
+    )
     return {
         "learner_id": learner_id,
         "tier": tier,
-        "upgrade_url": _MOCK_CHECKOUT_URL,
+        "upgrade_url": session.url,
     }
